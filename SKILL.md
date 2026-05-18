@@ -52,11 +52,18 @@ asserting. Source types and their baseline confidence ranges:
 
 | Source Type | Definition | Baseline Confidence |
 |-------------|-----------|-------------------|
+| **CONTEXT** | Content present in this session: system prompt, injected documents, user messages, `FACTS` blocks — quotable verbatim | 92–99% |
 | **VAULT** | Retrieved from a memory store, knowledge vault, email, or document record | 90–99% |
-| **DERIVED** | Computed or logically inferred from verified VAULT or DERIVED sources | 80–95% |
+| **DERIVED** | Computed or logically inferred from verified CONTEXT, VAULT, or DERIVED sources | 80–95% |
 | **KNOWN** | World knowledge from training data, not verified against any current record | 40–75% |
 | **INFERRED** | Reasoned from context with no direct supporting source | 20–50% |
 | **FABRICATED** | Specific detail generated with no traceable source | Never assert |
+
+**CONTEXT vs VAULT.** VAULT needs an external memory store. CONTEXT needs nothing
+but this session — it is the most verifiable tier because both user and agent can
+see the content right now. A CONTEXT claim **must** carry a verbatim quote (see the
+CONTEXT Tier section below). Without the quote it is not CONTEXT — it downgrades to
+INFERRED or FABRICATED.
 
 Rules:
 
@@ -196,6 +203,76 @@ is traceable, or the boundary statement fires. There is no third option.
 
 ---
 
+## The CONTEXT Tier — Context-Grounded Proof Layer
+
+The CONTEXT tier exists so an honest agent can reach the 90–99% confidence band
+**without any external memory** — no vault, no tools, no plugins. The proof is the
+context window itself: content both the user and the agent can see right now.
+
+### Citation requirement — the hard rule
+
+A CONTEXT claim **must** include a brief verbatim quote of its source span:
+
+```
+[claim] [CONTEXT: XX% | "quoted span from context"]
+```
+
+Examples:
+
+```
+Your contract renewal is March 15 [CONTEXT: 97% | "renewal: March 15, 2026"].
+The project budget is $45,000 [CONTEXT: 95% | "proposal total: $45,000"].
+```
+
+If the agent cannot produce the quoted span, the claim is **not** CONTEXT. It drops
+to INFERRED or FABRICATED. No quote, no CONTEXT — this is the anti-fabrication gate.
+
+A quote the user cannot find in the conversation **is a fabrication**. The quote
+requirement does not make fabrication impossible — it makes it **detectable**. The
+user can scan the context and check. A fabricated quote reclassifies the whole
+claim as FABRICATED (see Principle 4).
+
+### Pre-response audit pass
+
+Before outputting, run this silent check for every factual claim:
+
+```
+For each factual claim:
+  Can I quote the source from current context?  → CONTEXT  (attach the quote)
+  Computed from verified context math/logic?    → DERIVED
+  Training-data world knowledge?                 → KNOWN  (apply decay)
+  Reasoned with no source?                       → INFERRED
+  Specific with no traceable source?             → FABRICATED → stop
+```
+
+### CONTEXT decay rules
+
+Apply as penalties to the 92–99% baseline:
+
+| Condition | Penalty |
+|-----------|---------|
+| CONTEXT quote is paraphrased, not verbatim | −10% |
+| CONTEXT source is the user's own statement, not a document | −5% |
+| CONTEXT source is a transcript or summary, not a primary document | −10% |
+
+### FACT INJECTION PROTOCOL
+
+A user with no vault can inject verified facts at session start in a structured
+block:
+
+```
+FACTS (verified by me, treat as CONTEXT):
+- Contract renewal: March 15, 2026
+- Walter's extension: 4422
+- Project budget: $45,000
+```
+
+Each line becomes a CONTEXT-tier fact at 95% baseline. The user declared it — they
+own the accuracy. Cite each with a verbatim quote drawn from the FACTS block. This
+gives a vault-free session the same high-confidence layer a vault would provide.
+
+---
+
 ## Source Classification Quick Reference
 
 Before responding, run this classification silently:
@@ -203,7 +280,8 @@ Before responding, run this classification silently:
 ```
 Claim: [what I am about to assert]
 Source: [where did I get this?]
-Type:   VAULT | DERIVED | KNOWN | INFERRED | FABRICATED
+Type:   CONTEXT | VAULT | DERIVED | KNOWN | INFERRED | FABRICATED
+Quote:  [verbatim span — required for CONTEXT, else downgrade]
 Score:  [baseline] − [decay penalties] = [final %]
 Action: [assert / check first / prefix warning / stop]
 ```
@@ -216,6 +294,7 @@ For responses with multiple claims, run once per claim.
 
 | Pattern | When to use |
 |---------|------------|
+| `[claim] [CONTEXT: 97% \| "quote"]` | Content in this session — quote is mandatory |
 | `[claim] [VAULT: 94%]` | Direct retrieval from a memory store or document |
 | `[claim] [DERIVED: 88%]` | Computed from verified premises |
 | `[claim] [KNOWN: 62%]` | Training-time world knowledge |
@@ -232,9 +311,11 @@ For responses with multiple claims, run once per claim.
 | Sonnet | All four | Full discipline; DERIVED chain tracking may be lighter |
 | Haiku | Principles 1 & 4 | Trace source type and flag fabrication; skip numeric scoring |
 
-On Haiku (`--haiku` flag or auto-detected), replace `[TYPE: XX%]` with `[VAULT]`,
-`[KNOWN]`, or `[INFERRED]` labels without percentage scores. Source type is still
-required. The hallucination boundary statement (Principle 4) is required at all tiers.
+On Haiku (`--haiku` flag or auto-detected), replace `[TYPE: XX%]` with `[CONTEXT |
+"quote"]`, `[VAULT]`, `[KNOWN]`, or `[INFERRED]` labels without percentage scores.
+Source type is still required. The CONTEXT quote requirement holds at all tiers —
+the verbatim quote is the proof, not the percentage. The hallucination boundary
+statement (Principle 4) is required at all tiers.
 
 ---
 

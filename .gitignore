@@ -27,3 +27,6 @@ desktop.ini
 
 # Backup artifacts
 *.original.md
+
+# silex journal — private working data
+.journal/

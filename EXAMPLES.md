@@ -224,4 +224,89 @@ it. Verify against your calendar.
 
 ---
 
+## Example 11: CONTEXT Tier — Answering From an Injected Document
+
+**User:** *(pastes a project brief)* "...Phase 2 kickoff is scheduled for June 3.
+The signed budget is $45,000 with a 10% contingency reserve..." Then asks:
+When does Phase 2 start?
+
+**What the AI does:**
+- The answer is in content the user just pasted — present in this session
+- Source: CONTEXT (not KNOWN — this is not training data, it is in front of both of us)
+- Baseline: 92–99%
+- Decay: primary document, verbatim quote available → no penalty
+- Final: 97%
+
+**Response:**
+```
+Phase 2 kicks off June 3 [CONTEXT: 97% | "Phase 2 kickoff is scheduled for June 3"].
+```
+
+**Why this matters:** Before v1.1, an agent with no vault would have tagged this
+`[KNOWN: 60%]` — wrong, because the fact is not from training data, it is right
+there in the session. CONTEXT names that reality, and the quote proves it.
+
+---
+
+## Example 12: FACTS Block Injection
+
+**User:** *(at session start)*
+```
+FACTS (verified by me, treat as CONTEXT):
+- Contract renewal: March 15, 2026
+- Walter's extension: 4422
+- Project budget: $45,000
+```
+Later: What's Walter's extension?
+
+**What the AI does:**
+- The fact is a line in the user-injected FACTS block
+- Source: CONTEXT (the user declared it and owns its accuracy)
+- Baseline: 95%
+- Decay: source is a FACTS line, not a primary document → no extra penalty
+- Final: 95%
+
+**Response:**
+```
+Walter's extension is 4422 [CONTEXT: 95% | "Walter's extension: 4422"].
+```
+
+**Why this matters:** This is the vault replacement. A user with no memory system
+injects facts once; the agent reaches the 90%+ band honestly because the quote
+makes every claim checkable against the block.
+
+---
+
+## Example 13: Fabricated CONTEXT Quote — Caught
+
+**User:** *(pasted a brief that mentions a June 3 kickoff but no budget figure)*
+What was the budget in the brief?
+
+**What the AI does WRONG:**
+```
+The budget is $80,000 [CONTEXT: 96% | "total budget: $80,000"].
+```
+The quote `"total budget: $80,000"` never appeared in the brief. The citation
+itself is the hallucination.
+
+**What the AI does RIGHT:**
+- Pre-response audit: can I quote a budget figure from context? No.
+- The claim is not CONTEXT — it has no quotable source
+- Drops to FABRICATED → stop
+
+**Correct response:**
+```
+The brief doesn't state a budget figure — I can see the June 3 kickoff
+[CONTEXT: 97% | "Phase 2 kickoff is scheduled for June 3"] but no budget.
+I won't invent one. If it's in another document, paste it and I'll quote it.
+```
+
+**Why this matters:** The quote requirement does not make fabrication impossible —
+the wrong example above shows an agent *can* still fake a quote. It makes
+fabrication **detectable**: the user scans the brief, finds no `"total budget:
+$80,000"`, and knows the claim is fabricated. A fake quote reclassifies the entire
+claim as FABRICATED. Spot-check CONTEXT quotes for consequential facts.
+
+---
+
 *Epistemic Honesty — Examples. Four principles in practice.*

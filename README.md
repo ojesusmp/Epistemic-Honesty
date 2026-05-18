@@ -43,11 +43,16 @@ Before asserting any fact, the AI classifies where it came from:
 
 | Label | Meaning | Confidence |
 |-------|---------|-----------|
+| `CONTEXT` | From this session — a doc you pasted, your messages, a `FACTS` block. Quote required | 92–99% |
 | `VAULT` | From your memory, vault, emails, or documents | 90–99% |
 | `DERIVED` | Calculated from verified sources | 80–95% |
 | `KNOWN` | From AI training data | 40–75% |
 | `INFERRED` | Reasoned with no direct source | 20–50% |
 | `FABRICATED` | No traceable source — **never asserted** | Never |
+
+`CONTEXT` is the tier that works **without a vault**. If the answer is in something
+you pasted into the chat, the AI must quote it back to you as proof — see the
+[FACT INJECTION PROTOCOL](#fact-injection-protocol) below.
 
 If classification lands on `FABRICATED`, the AI stops and tells you the gap instead of inventing an answer.
 
@@ -85,6 +90,38 @@ You should verify this before acting on it.
 ```
 
 It cannot soften this into "I believe" or "I think." Those phrases hide the problem. One invented detail in a response flags the whole response.
+
+---
+
+## FACT INJECTION PROTOCOL
+
+No vault? No memory plugin? You can still get high-confidence answers — by giving
+the AI a verifiable source it can quote.
+
+Paste a `FACTS` block at the start of your session:
+
+```
+FACTS (verified by me, treat as CONTEXT):
+- Contract renewal: March 15, 2026
+- Walter's extension: 4422
+- Project budget: $45,000
+```
+
+The AI treats every line as a `CONTEXT`-tier fact (95% baseline). When you ask
+about one, it answers with a verbatim quote as proof:
+
+```
+Your contract renewal is March 15 [CONTEXT: 95% | "Contract renewal: March 15, 2026"].
+```
+
+**Why the quote matters.** The quote is the AI proving it actually read your fact
+instead of guessing. If the AI shows a quote you cannot find in the conversation,
+that is a fabrication you can catch — scan the chat and check it. A fake quote
+makes the whole claim `FABRICATED`.
+
+You declared the facts, so you own their accuracy. This gives a plain ChatGPT or
+Claude session — with no vault, no tools — the same high-confidence layer a memory
+system would provide.
 
 ---
 
@@ -151,6 +188,10 @@ What is the renewal date for the Acme contract?
 | GPT-4o | Full | All 4 principles (paste SKILL.md into system prompt) |
 | Gemini | Full | All 4 principles (paste SKILL.md into system prompt) |
 | Any model | Lite | Add `--haiku` flag to use label-only mode |
+
+The `CONTEXT` tier needs **no vault and no plugins** — it works on any model in any
+session, including vanilla ChatGPT, Claude, or Gemini. Paste a `FACTS` block (see
+above) and the high-confidence layer is available everywhere.
 
 ---
 

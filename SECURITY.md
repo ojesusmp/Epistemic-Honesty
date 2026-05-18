@@ -33,6 +33,28 @@ or current. Your records can be wrong too.
 
 ---
 
+## The CONTEXT tier and fabricated quotes
+
+The `CONTEXT` tier (added in v1.1) requires every claim to carry a verbatim quote
+from the session. This is an **honesty mechanism, not a technical guardrail.**
+
+What it does:
+- Makes a fabricated CONTEXT claim **detectable** — the user can scan the
+  conversation and confirm the quote is real.
+
+What it does NOT do:
+- It cannot **prevent** an AI from generating a fake quote. A model can still
+  produce `[CONTEXT: 96% | "..."]` with a quote that never appeared in context.
+
+The defense is the user. For consequential facts (money, dates, legal, health),
+**spot-check CONTEXT quotes** against the actual conversation. A quote you cannot
+find means the claim is fabricated — treat it as `FABRICATED`, not `CONTEXT`.
+
+The quote requirement shifts fabrication from invisible to checkable. It does not
+remove the need for human verification.
+
+---
+
 ## Reporting issues
 
 If you find a prompt that causes the skill to fail silently — asserting a fabricated
